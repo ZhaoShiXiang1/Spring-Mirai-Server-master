@@ -1,0 +1,22 @@
+上次更新了指令后端输出记录的功能
+本次更新了舔狗日记免费版
+
+
+https://api.btstu.cn/sjbz/api.php 美女图片一般
+https://cdn.seovx.com/?mom=302 标清美女图片
+https://api.isoyu.com/mm_images.php 素颜写实版美女（推荐）
+https://api.isoyu.com/beibei_images.php 个人版，不推荐
+
+
+https://www.dmoe.cc/random.php 标清动漫壁纸
+https://cdn.seovx.com/d/?mom=302 动漫图片，偏黄
+https://api.isoyu.com/ip_images.php?signature=早安 返回请求信息的图片
+img.r10086.com（主站）
+https://api.r10086.com/img-api.php?type=动漫综合1（响应慢）
+https://api.ixiaowai.cn/api/api.php 二次元标清
+https://api.ixiaowai.cn/gqapi/gqapi.php （高清风景照）
+https://api.mtyqx.cn/tapi/random.php （二次元壁纸，电脑版）
+https://api.yimian.xyz/img （二次元壁纸高清版）
+https://img.xjh.me/random_img.php （二次元过于简化）
+http://img.xjh.me/random_img.php（2D动漫）
+https://img.paulzzh.tech/touhou/random 2D动漫）

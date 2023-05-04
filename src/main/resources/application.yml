@@ -10,5 +10,7 @@ spring:
     password: zsx.2468
     url: jdbc:mysql://43.143.69.67:3306/game?useSSL=false
     driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      max-lifetime: 1200000
 server:
   port: 8081

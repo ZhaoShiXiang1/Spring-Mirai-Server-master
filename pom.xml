@@ -21,6 +21,11 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.python</groupId>
+            <artifactId>jython-standalone</artifactId>
+            <version>2.7.0</version>
+        </dependency>
+        <dependency>
             <groupId>net.lz1998</groupId>
             <artifactId>pbbot-spring-boot-starter</artifactId>
             <version>0.0.35</version>

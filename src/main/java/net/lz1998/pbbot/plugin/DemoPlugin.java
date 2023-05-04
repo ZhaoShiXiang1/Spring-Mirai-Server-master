@@ -3,7 +3,7 @@ package net.lz1998.pbbot.plugin;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import javafx.scene.text.Text;
+
 import net.lz1998.pbbot.bot.Bot;
 import net.lz1998.pbbot.bot.BotPlugin;
 import net.lz1998.pbbot.pojo.UserInfo;
@@ -18,7 +18,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
@@ -43,9 +45,10 @@ public class DemoPlugin extends BotPlugin {
         long userId = event.getUserId();
         String text = event.getRawMessage();
         String str;
-        jdbcTemplate.update("insert into `session` (`user_id`,`group_id`,`order`,`times`,`date_time`) value (" + userId + ",9999999,\'"+text+"\',\'"+event.getTime()+"\',\'"+new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())+"\')");
-        System.out.println(new Date().getTime());
-
+        String datetime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+        Long eventime=event.getTime();
+        jdbcTemplate.update("insert into `session` (`user_id`,`group_id`,`order`,`times`,`date_time`,`num`,`vip`) value (" + userId + ",9999999,\'"+text+"\',\'"+eventime+"\',\'"+datetime+"\',0,0)");
+//        System.out.println(new Date().getTime());
         if (text.contains("吗")) {
             str = text;
             str = str.replace("吗", "");
@@ -60,6 +63,7 @@ public class DemoPlugin extends BotPlugin {
             Msg msg = Msg.builder()
                     .image("https://api.btstu.cn/sjbz/api.php");
             bot.sendPrivateMsg(userId, msg, false);
+//            System.out.println("-------------------------");
             return MESSAGE_BLOCK; // 当存在多个plugin时，不执行下一个plugin
         }
         if (text.equals("写真美女")) {
@@ -88,7 +92,7 @@ public class DemoPlugin extends BotPlugin {
         }
         if (text.contains("增加功能")||text.contains("反馈BUG")) {
           String words=  text.split(" ")[1];
-            System.out.println(words);
+//            System.out.println(words);
             bot.sendPrivateMsg(userId, "反馈成功，等待码农哥哥开发，亲", false);
            // String sql = "insert into `gamal_test` (`user_id`,`group_id`,`lines`) value (" + userId + ",9999999,"+"words"+")";
             jdbcTemplate.update("insert into `gamal_test` (`user_id`,`group_id`,`lines`,`times`,`date_time`) value (" + userId + ",9999999,\'"+words+"\',\'"+event.getTime()+"\',\'"+new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())+"\')");
@@ -378,7 +382,7 @@ public class DemoPlugin extends BotPlugin {
                         //使用道具后触发结果
                         if (integer1 == 1) {
                             Integer update = jdbcTemplate.update("update user_pack_info set goods_num=? where user_id =? and goods_name = ?", userPackInfo.getGoods_num() - 1, userId, goodName);
-                            System.out.println("--->" + update);
+//                            System.out.println("--->" + update);
                             if (update == 1) {
                                 bot.sendPrivateMsg(userId, "道具" + userPackInfo.getGoods_name() + ": 1 使用完毕", false);
                                 return MESSAGE_BLOCK;// 当存在多个plugin时，继续执行下一个plugin
@@ -441,7 +445,7 @@ public class DemoPlugin extends BotPlugin {
             bot.sendPrivateMsg(userId, "您输入的语法错误请输入【放生+空格+宠物名】", false);
             return MESSAGE_BLOCK;// 当存在多个plugin时，继续执行下一个plugin
         }
-        
+
         //查询宠物信息
         if (text.equals("宠物信息")) {
             String animal_info = jdbcTemplate.queryForObject("SELECT animal_name FROM `user_info` where user_id =? ", String.class, userId);
@@ -576,9 +580,22 @@ public class DemoPlugin extends BotPlugin {
             bot.sendPrivateMsg(userId, "欢迎使用宠物游戏,指令如下\n注册(宠物游戏注册)\n背包(获取背包信息)\n宠物信息(获取宠物信息)\n攻击+空格+目标QQ(进行宠物比拼)\n使用+空格+道具名称(使用道具)", false);
             return MESSAGE_BLOCK;// 当存在多个plugin时，继续执行下一个plugin
         }
-
-        bot.sendPrivateMsg(userId, "功能尚不完善目前只支持以下功能\n" + getList(), false);
-        return MESSAGE_BLOCK;// 当存在多个plugin时，继续执行下一个plugin
+        if (text.equals("列表")){
+            bot.sendPrivateMsg(userId,"功能尚不完善目前只支持以下功能\n" + getList(), false);
+            return MESSAGE_BLOCK;// 当存在多个plugin时，继续执行下一个plugin
+        }
+        //调用了多少次GPT
+        //Integer num = jdbcTemplate.queryForObject("SELECT sum(num) FROM `session` where user_id =? ", Integer.class, userId);
+        //Integer vip = jdbcTemplate.queryForObject("SELECT count(*) FROM `session` where user_id =? and vip=1", Integer.class, userId);
+        //System.out.println(num+"----"+vip);
+        //if (10>num || (vip!=0) ){
+        bot.sendPrivateMsg(userId,  getGpt(text), false);
+        jdbcTemplate.update("update `session` set `num`=1 where `user_id`="+userId+" and `group_id`=9999999 and `order`=\'"+text+"\' and `times`=\'"+eventime+"\'");
+        return MESSAGE_IGNORE; // 当存在多个plugin时，继续执行下一个plugin
+        //}
+//        System.out.println(getGpt(text).toString());
+        ///bot.sendPrivateMsg(userId, "您的询问次数今日已达上线,仅可以使用列表内功能\n,@我输入【列表】查看功能。打开空间扫码备注QQ号，1元即可解锁不限次数询问", false);
+        //return MESSAGE_BLOCK;// 当存在多个plugin时，继续执行下一个plugin
     }
 
     //发送至群
@@ -588,11 +605,13 @@ public class DemoPlugin extends BotPlugin {
         long groupId = event.getGroupId();
         String text = event.getRawMessage();
         String textGroup = text.replace("<at qq=\"2258507036\"/> ", "");
+        System.out.println(textGroup);
         long userId = event.getUserId();
+        String datetime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+        Long eventime=event.getTime();
         //日常功能
         if (text.contains("<at qq=\"2258507036\"/>")) {
-            jdbcTemplate.update("insert into `session` (`user_id`,`group_id`,`order`,`times`,`date_time`) value (" + userId + ","+groupId+",\'"+textGroup+"\',\'"+event.getTime()+"\',\'"+new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())+"\')");
-
+            jdbcTemplate.update("insert into `session` (`user_id`,`group_id`,`order`,`times`,`date_time`,`num`,`vip`) value (" + userId + ","+groupId+",\'"+textGroup+"\',\'"+event.getTime()+"\',\'"+datetime+"\',0,0)");
             if (text.contains("秋名山飙车")) {
                 bot.sendGroupMsg(groupId, "想啥呢，小伙子，你以为真有呀！", false);
                 return MESSAGE_BLOCK; // 当存在多个plugin时，不执行下一个plugin
@@ -970,7 +989,7 @@ public class DemoPlugin extends BotPlugin {
                             //使用道具后触发结果
                             if (integer1 == 1) {
                                 Integer update = jdbcTemplate.update("update user_pack_info set goods_num=? where user_id =? and goods_name = ?", userPackInfo.getGoods_num() - 1, userId, goodName);
-                                System.out.println("--->" + update);
+//                                System.out.println("--->" + update);
                                 if (update == 1) {
                                     bot.sendGroupMsg(groupId, "道具" + userPackInfo.getGoods_name() + ": 1 使用完毕", false);
                                     return MESSAGE_BLOCK;// 当存在多个plugin时，继续执行下一个plugin
@@ -1118,10 +1137,23 @@ public class DemoPlugin extends BotPlugin {
                 bot.sendGroupMsg(groupId, "欢迎使用宠物游戏,指令如下\n注册(宠物游戏注册)\n背包(获取背包信息)\n宠物信息(获取宠物信息)\n攻击+空格+目标QQ(进行宠物比拼)\n使用+空格+道具名称(使用道具)", false);
                 return MESSAGE_IGNORE; // 当存在多个plugin时，继续执行下一个plugin
             }
-
-            bot.sendGroupMsg(groupId, "功能尚不完善目前只支持以下功能\n" + getList(), false);
+            if (textGroup.equals("列表")){
+                bot.sendGroupMsg(groupId, "功能尚不完善目前只支持以下功能\n" + getList(), false);
+                return MESSAGE_IGNORE; // 当存在多个plugin时，继续执行下一个plugin
+            }
+            //调用了多少次GPT
+           // Integer num = jdbcTemplate.queryForObject("SELECT sum(num) FROM `session` where user_id =? ", Integer.class, userId);
+          //  Integer vip = jdbcTemplate.queryForObject("SELECT count(*) FROM `session` where user_id =? and vip=1", Integer.class, userId);
+           // if (10>num || (vip!=0) ){
+            bot.sendGroupMsg(groupId,  getGpt(text).toString(), false);
+            jdbcTemplate.update("update `session` set `num`=1 where `user_id`="+userId+" and `group_id`="+groupId+" and `order`=\'"+textGroup+"\' and `times`=\'"+eventime+"\'");
             return MESSAGE_IGNORE; // 当存在多个plugin时，继续执行下一个plugin
+           // }
+
+            //bot.sendGroupMsg(groupId,"您的询问次数今日已达上线,仅可以使用列表内功能\n,@我输入【列表】查看功能。打开空间扫码备注QQ号，1元即可解锁不限次数询问", false);
+
         }
+//        bot.sendGroupMsg(groupId,  getGpt(text).toString(), false);
         return MESSAGE_IGNORE; // 当存在多个plugin时，继续执行下一个plugin
     }
 
@@ -1130,7 +1162,8 @@ public class DemoPlugin extends BotPlugin {
 
         String result =
                 "您可以@我输入:" + "\n" +
-                        "美女/色图/情话/风景照\n"
+                        "列表(获取所有功能)\n"
+                        +"美女/色图/情话/风景照\n"
                         + "宠物游戏" + "\n"
                         + "动漫图片" + "\n"
                         + "舔狗日记(有上限)" + "\n"
@@ -1241,7 +1274,7 @@ public class DemoPlugin extends BotPlugin {
             Response response = client.newCall(request).execute();
             String str = response.body().string();
             String substring = str.replace("1","");
-            System.out.println(substring);
+//            System.out.println(substring);
             JSONObject jsonObject = JSONObject.parseObject(substring);
 
             JSONArray newslist = jsonObject.getJSONArray("newslist");
@@ -1264,6 +1297,45 @@ public class DemoPlugin extends BotPlugin {
         }
     }
     //舔狗日记不限次数
+    public static String getGpt(String text){
+      String str3 = null;
+      String  text2=text.replace("<at qq=\"2258507036\"/> ","");
+      StringBuffer buffer = new StringBuffer();
+        // TODO Auto-generated method stub
+      Process proc;
+//      String str2="python C:\\Users\\PC\\IdeaProjects\\GPT\\gpt1.0\\test1.py "+text2;
+
+       String str2="python C:\\Users\\Administrator\\Desktop\\test1.py "+text2;
+      System.out.println("str2="+str2);
+        try {
+            proc = Runtime.getRuntime().exec(str2);// 执行py文件
+            //用输入输出流来截取结果
+
+            BufferedReader in = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+            String line = null;
+            buffer.append("你好:");
+//            System.out.println(in.readLine());
+            while ((line = in.readLine()) != null) {
+//                System.out.println("进入循环");
+//                System.out.println(line);
+                buffer.append('\n');
+                buffer.append(line.toString());
+
+            }
+//            System.out.println("结束");
+            in.close();
+            proc.waitFor();
+//            System.out.println("-------------");
+      str3= buffer.toString().replace("\n\n","\n");//替换为空古诗会出现异常
+      System.out.println(str3);
+      return str3;
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return str3;
+    }
 
 
 }
